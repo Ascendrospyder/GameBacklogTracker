@@ -37,7 +37,6 @@ public class AuthController : ControllerBase
     }
 
     var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    Console.WriteLine(claim);
     var steamId = claim?.Split('/').Last();
     var username = User.FindFirst(ClaimTypes.Name)?.Value;
 
