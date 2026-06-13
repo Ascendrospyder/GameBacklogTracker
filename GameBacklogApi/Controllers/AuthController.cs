@@ -1,5 +1,6 @@
 
 
+using System.Diagnostics;
 using System.Security.Claims;
 using GameBacklogApi.Data;
 using GameBacklogApi.Models;
@@ -39,6 +40,7 @@ public class AuthController : ControllerBase
     var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     var steamId = claim?.Split('/').Last();
     var username = User.FindFirst(ClaimTypes.Name)?.Value;
+    Debug.WriteLine($"User object = {User}");
 
     if (string.IsNullOrEmpty(steamId)) return BadRequest("Could not pase Steam ID.");
 
@@ -56,13 +58,7 @@ public class AuthController : ControllerBase
       _context.SaveChanges();
     }
 
-    return Ok(new
-    {
-
-      Message = "Successfully logged in via Steam.",
-      SteamId = existingUser.SteamId,
-      username = existingUser.Username
-    });
+    return Redirect("http://localhost:3000/");
   }
 
 }
