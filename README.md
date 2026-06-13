@@ -1,156 +1,212 @@
-# GameBacklogTracker
+# Game Backlog Tracker
 
-GameBacklogTracker is a small ASP.NET Core Web API project for tracking a personal game backlog while learning .NET. The repository currently focuses on the backend domain model and API surface: games, users, and a join table that tracks a user’s relationship to a game, including status, playtime, and rating.
+Track your Steam game backlog — what's queued, what you're playing, and what you've finished. A React frontend talks to an ASP.NET Core API backed by SQLite.
 
-## What’s In The Project
+## Features
 
-The app is built around a simple backlog workflow:
+Work in progress. See [docs/USER_STORIES.md](docs/USER_STORIES.md) for the full roadmap.
 
-- `Game` stores the game title, optional Steam app ID, and cover art URL.
-- `User` stores a Steam ID and display name.
-- `UserGameBacklog` links a user to a game and tracks backlog state with `Backlog`, `Playing`, `Completed`, or `Abandoned`.
+### Implemented
 
-The API currently includes:
+| Area | What's working |
+|------|----------------|
+| **Auth (US-1.1)** | Sign in with Steam via OpenID; new users are created automatically; redirect back to the app after login |
+| **Session (US-1.2, partial)** | `GET /api/auth/me` returns the logged-in user; home page shows your Steam username |
+| **Games API** | `GET /api/games` and `POST /api/games` for listing and manually creating games |
+| **Data model** | `User`, `Game`, and `UserGameBacklog` with statuses: Backlog, Playing, Completed, Abandoned |
+| **Frontend shell (US-6.1, partial)** | Login page, authenticated home page, loading states |
+| **API client (US-6.2, partial)** | Shared auth fetch layer with cookie credentials via `VITE_API_URL` |
+| **UI** | Ant Design components, light/dark theme toggle |
+| **Dev tooling** | Docker Compose runs API + Vite together with hot reload |
 
-- `GET /weatherforecast` from the default ASP.NET template.
-- `GET /api/games` to list all games.
-- `POST /api/games` to create a new game.
+### Not yet implemented
 
-SQLite is used for persistence through Entity Framework Core.
+- Sign out (US-1.3)
+- Protected backlog endpoints (US-1.4, US-3.x)
+- Steam library import and playtime sync (US-2.1, US-2.2)
+- Backlog browsing, status changes, ratings, and game cards (US-3.x, US-6.3)
+- Stats, filters, and "pick something to play" (US-4.x, US-5.x)
 
-## Tech Stack
+## Tech stack
 
-- .NET 10 Web API
-- ASP.NET Core
-- Entity Framework Core
-- SQLite
-- OpenAPI support in development
-- Docker
+| Layer | Tools |
+|-------|-------|
+| **Frontend** | React 19, TypeScript, Vite, Ant Design |
+| **Backend** | .NET 10, ASP.NET Core Web API |
+| **Database** | SQLite via Entity Framework Core |
+| **Auth** | Steam OpenID, cookie-based sessions |
+| **Dev ops** | Docker, Docker Compose |
 
-## Project Structure
+## Prerequisites
 
-- `GameBacklogApi/Program.cs` configures the web app and registers the SQLite DbContext.
-- `GameBacklogApi/Controllers/GamesController.cs` contains the games API endpoints.
-- `GameBacklogApi/Data/AppDbContext.cs` defines the EF Core database context.
-- `GameBacklogApi/Models/` contains the entity models.
-- `GameBacklogApi/DTOs/` contains request DTOs.
-- `GameBacklogApi/Migrations/` contains the initial EF Core migration.
+**Docker (recommended)**
 
-## Requirements
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) with Compose v2
+- A [Steam Web API key](https://steamcommunity.com/dev/apikey)
 
-- .NET 10 SDK
-- Optional: Docker Desktop if you want to run the API in a container
+**Local development (without Docker)**
 
-## Run Locally
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [Node.js 22+](https://nodejs.org/)
+- Steam Web API key
 
-1. Open a terminal in `GameBacklogApi`.
-2. Restore packages:
+## Quick start (Docker)
+
+From the repository root:
+
+1. Create a `.env` file for the Steam API key:
+
+```env
+STEAM_API_KEY=your_steam_web_api_key
+```
+
+2. Ensure the SQLite data directory exists:
 
 ```bash
+mkdir GameBacklogApi/data
+```
+
+3. Build and start both services:
+
+```bash
+docker compose up --build
+```
+
+Note: `--build` goes **after** `up`, not before.
+
+4. Open the app:
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:5173 |
+| API | http://localhost:8080 |
+
+Stop with `Ctrl+C`, or run detached with `docker compose up -d`.
+
+Rebuild after dependency changes:
+
+```bash
+docker compose build
+docker compose up
+```
+
+## Local development (without Docker)
+
+Run the API and frontend in separate terminals.
+
+### API
+
+```bash
+cd GameBacklogApi
 dotnet restore
+dotnet user-secrets set "Steam:ApiKey" "your_steam_web_api_key"
+dotnet run --launch-profile https
 ```
 
-3. Run the API:
+The API listens on:
+
+- https://localhost:7272
+- http://localhost:5205
+
+Migrations run automatically on startup. The SQLite database is stored at `GameBacklogApi/data/gamebacklog.db`.
+
+### Frontend
 
 ```bash
-dotnet run
+cd Gamebacklog-Ui
+npm install
+cp .env.example .env
+npm run dev
 ```
 
-The launch settings are configured to use:
+For local (non-Docker) development, set the API URL in `.env`:
 
-- `http://localhost:5205`
-- `https://localhost:7272`
+```env
+VITE_API_URL=https://localhost:7272
+```
+
+The frontend dev server runs at http://localhost:5173.
+
+## Environment variables
+
+| Variable | Used by | Description |
+|----------|---------|-------------|
+| `STEAM_API_KEY` | Docker Compose → API | Steam Web API key (`Steam__ApiKey`) |
+| `VITE_API_URL` | Frontend | Base URL for API requests (browser-facing) |
+| `Frontend__Url` | API (Docker) | CORS origin and post-login redirect (default `http://localhost:5173`) |
+
+**Docker:** set `STEAM_API_KEY` in a root `.env` file.
+
+**Local API:** use `dotnet user-secrets set "Steam:ApiKey" "..."` or export `Steam__ApiKey`.
+
+Never commit API keys or `.env` files with secrets.
+
+## Project structure
+
+```
+GameBacklogTracker/
+├── docker-compose.yml          # Dev orchestration (API + frontend)
+├── GameBacklogApi/             # ASP.NET Core Web API
+│   ├── Controllers/            # Auth, games
+│   ├── Data/                   # EF Core DbContext + SQLite file
+│   ├── Models/                 # User, Game, UserGameBacklog
+│   ├── DTOs/
+│   ├── Migrations/
+│   └── Dockerfile
+├── Gamebacklog-Ui/             # React + Vite frontend
+│   ├── src/
+│   │   ├── api/                # API client (auth)
+│   │   ├── pages/              # Login, home
+│   │   └── components/         # Steam sign-in, theme toggle
+│   └── Dockerfile.dev
+└── docs/
+    └── USER_STORIES.md         # Feature backlog and acceptance criteria
+```
+
+## API endpoints
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/auth/login` | No | Start Steam OpenID login |
+| `GET` | `/api/auth/validate` | No | Complete login, create user if new |
+| `GET` | `/api/auth/me` | Yes | Return current user |
+| `GET` | `/api/games` | No | List all games |
+| `POST` | `/api/games` | No | Create a game manually |
+
+OpenAPI is available in Development at `/openapi/v1.json` when running the API locally with HTTPS.
+
+### Example: create a game
+
+```bash
+curl -X POST http://localhost:8080/api/games \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Hades","steamAppId":1145360,"coverArtUrl":"https://example.com/hades.jpg"}'
+```
 
 ## Database
 
-The connection string points to a local SQLite file at `data/gamebacklog.db`.
+SQLite file: `GameBacklogApi/data/gamebacklog.db`
 
-If the database does not already exist, EF Core will create it when the app starts and migrations are applied. Make sure the `data` folder exists under `GameBacklogApi` before running the app the first time.
+Tables: `Games`, `Users`, `UserGameBacklogs` (composite key on `UserId` + `GameId`).
 
-If you need to create or update the database manually, use EF Core commands from the `GameBacklogApi` folder:
+To apply migrations manually:
 
 ```bash
+cd GameBacklogApi
 dotnet ef database update
 ```
 
-If the EF tool is not installed, you can add it with:
+Install the EF CLI if needed:
 
 ```bash
 dotnet tool install --global dotnet-ef
 ```
 
-## API Endpoints
+## Roadmap
 
-### Games
+The next MVP milestones from [docs/USER_STORIES.md](docs/USER_STORIES.md):
 
-`GET /api/games`
-
-Returns all games stored in the database.
-
-`POST /api/games`
-
-Creates a new game.
-
-Example request body:
-
-```json
-{
-	"title": "Hades",
-	"steamAppId": 1145360,
-	"coverArtUrl": "https://example.com/hades.jpg"
-}
-```
-
-If a game with the same title already exists, the API returns a conflict response.
-
-### Default Template Endpoint
-
-`GET /weatherforecast`
-
-This endpoint comes from the default ASP.NET template and is still present in the current app.
-
-## Docker
-
-The repository includes a multi-stage Dockerfile for building and running the API in a container.
-
-Build the image from the `GameBacklogApi` folder:
-
-```bash
-docker build -t gamebacklogapi .
-```
-
-Run the container:
-
-```bash
-docker run --rm -p 8080:8080 gamebacklogapi
-```
-
-## Data Model
-
-The initial migration creates three tables:
-
-- `Games`
-- `Users`
-- `UserGameBacklogs`
-
-`UserGameBacklogs` uses a composite primary key made up of `UserId` and `GameId`, which lets the app track a user’s status for a specific game without duplicate rows.
-
-## Learning Goals
-
-This project is intentionally small and practical. It is a good starting point for learning:
-
-- ASP.NET Core Web API structure
-- Entity Framework Core with SQLite
-- DTOs and controllers
-- Relational modeling with join tables
-- Containerizing a .NET app with Docker
-
-## Notes
-
-- The app currently uses a minimal API startup style with a controller-based endpoint for games.
-- There is no frontend checked into this repository yet; the current scope is the API and persistence layer.
-- The default weather forecast sample route is still in place and can be removed later if you want a cleaner API surface.
-
-## Next Steps
-
-If you want to keep building this out, the next natural additions would be user CRUD endpoints, backlog item endpoints, authentication, and a frontend that talks to this API.
+1. **Auth polish** — sign out, protect backlog routes (US-1.3, US-1.4)
+2. **Steam import** — pull owned games and playtime (US-2.1, US-2.2)
+3. **Backlog CRUD** — add, update status, browse by status (US-3.1, US-3.2, US-3.5)
+4. **UI wiring** — game cards, import button, error states (US-6.2, US-6.3)

@@ -1,10 +1,11 @@
 
-
 using System.Diagnostics;
 using System.Security.Claims;
 using GameBacklogApi.Data;
+using GameBacklogApi.DTOs;
 using GameBacklogApi.Models;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GameBacklogApi.Controllers;
@@ -14,10 +15,12 @@ namespace GameBacklogApi.Controllers;
 public class AuthController : ControllerBase
 {
   private readonly AppDbContext _context;
+  private readonly string _frontendUrl;
 
-  public AuthController(AppDbContext context)
+  public AuthController(AppDbContext context, IConfiguration configuration)
   {
     _context = context;
+    _frontendUrl = configuration["Frontend:Url"] ?? "http://localhost:5173";
   }
 
   [HttpGet("login")]
@@ -58,7 +61,33 @@ public class AuthController : ControllerBase
       _context.SaveChanges();
     }
 
-    return Redirect("http://localhost:3000/");
+    return Redirect($"{_frontendUrl}/");
+  }
+
+  [Authorize]
+  [HttpGet("me")]
+  public IActionResult Me()
+  {
+    var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    var steamId = claim?.Split('/').Last();
+
+    if (string.IsNullOrEmpty(steamId))
+    {
+      return Unauthorized();
+    }
+
+    var user = _context.Users.FirstOrDefault(u => u.SteamId == steamId);
+    if (user == null)
+    {
+      return Unauthorized();
+    }
+
+    return Ok(new UserDto
+    {
+      Id = user.Id,
+      SteamId = user.SteamId,
+      Username = user.Username
+    });
   }
 
 }
