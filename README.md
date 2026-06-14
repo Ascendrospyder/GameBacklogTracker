@@ -16,7 +16,7 @@ Work in progress. See [docs/USER_STORIES.md](docs/USER_STORIES.md) for the full 
 | **Data model** | `User`, `Game`, and `UserGameBacklog` with statuses: Backlog, Playing, Completed, Abandoned |
 | **Frontend shell (US-6.1, partial)** | Login page, authenticated home page, loading states |
 | **API client (US-6.2, partial)** | Shared auth fetch layer with cookie credentials via `VITE_API_URL` |
-| **UI** | Ant Design components, light/dark theme toggle |
+| **UI** | Tailwind CSS, light/dark theme toggle |
 | **Dev tooling** | Docker Compose runs API + Vite together with hot reload |
 
 ### Not yet implemented
@@ -31,7 +31,7 @@ Work in progress. See [docs/USER_STORIES.md](docs/USER_STORIES.md) for the full 
 
 | Layer | Tools |
 |-------|-------|
-| **Frontend** | React 19, TypeScript, Vite, Ant Design |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS |
 | **Backend** | .NET 10, ASP.NET Core Web API |
 | **Database** | SQLite via Entity Framework Core |
 | **Auth** | Steam OpenID, cookie-based sessions |

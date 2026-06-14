@@ -16,16 +16,16 @@ services:
   
   frontend:
     build:
-      context: ./Gamebacklog-Ui
+      context: ./gamebacklog-ui
       dockerfile: Dockerfile.dev
     container_name: gamebacklog_frontend
     ports:
-      - "5173:5173"
+      - "3000:3000"
     volumes:
-      - ./Gamebacklog-Ui:/app
+      - ./gamebacklog-ui:/app
       - ui_node_modules:/app/node_modules
     environment:
-      - VITE_API_URL=http://localhost:8080
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
     depends_on:
       - api
     
